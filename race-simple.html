@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐰 달리는 동물들 - 초간단</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #667eea;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        #gameContainer {
+            width: 400px;
+            height: 600px;
+            background: #87CEEB;
+            border: 3px solid #333;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        #menu {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #667eea;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            z-index: 100;
+        }
+        .menu-title {
+            font-size: 40px;
+            font-weight: bold;
+            color: white;
+            text-align: center;
+        }
+        .select-group {
+            text-align: center;
+        }
+        .select-group label {
+            display: block;
+            color: #FFD700;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        button {
+            width: 70px;
+            height: 70px;
+            font-size: 40px;
+            border: 3px solid #444;
+            border-radius: 8px;
+            background: #4444AA;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background: #6666FF;
+            border-color: #666;
+        }
+        button.selected {
+            background: #00FF00;
+            border-color: #00AA00;
+        }
+        #startBtn {
+            width: 250px;
+            height: 60px;
+            font-size: 24px;
+            background: #00DD00;
+            color: #000;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        #startBtn:hover {
+            background: #00FF00;
+        }
+        #game {
+            display: none;
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        #player {
+            position: absolute;
+            width: 40px;
+            height: 50px;
+            background: #FFB6C1;
+            left: 180px;
+            top: 250px;
+            font-size: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 8px 12px;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 50;
+            border-radius: 4px;
+        }
+        #health {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 8px 12px;
+            font-size: 20px;
+            font-weight: bold;
+            z-index: 50;
+            border-radius: 4px;
+            min-width: 80px;
+            text-align: center;
+        }
+        #stage {
+            position: absolute;
+            top: 50px;
+            right: 10px;
+            background: white;
+            padding: 8px 12px;
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 50;
+            border-radius: 4px;
+            min-width: 120px;
+            text-align: center;
+            border: 2px solid #667eea;
+        }
+        #active-effects {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            z-index: 50;
+            font-size: 14px;
+            max-width: 200px;
+            min-height: 30px;
+            border: 2px solid #FFD700;
+        }
+        .effect-bar {
+            background: #DDD;
+            height: 20px;
+            border-radius: 4px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        .effect-progress {
+            height: 100%;
+            background: #FFD700;
+            transition: width 0.2s linear;
+        }
+        .bad-effect {
+            border-color: #FF0000 !important;
+        }
+        .bad-effect .effect-progress {
+            background: #FF0000 !important;
+        }
+        .stage-up {
+            animation: stageUpEffect 1s ease-out;
+        }
+        @keyframes stageUpEffect {
+            0% { transform: scale(1); background: #FFD700; }
+            50% { transform: scale(1.2); background: #FFA500; }
+            100% { transform: scale(1); background: white; }
+        }
+        .heart {
+            color: #FF0000;
+        }
+        #items, #obstacles {
+            position: absolute;
+        }
+        .item {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            font-size: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #FFD700;
+            border-radius: 8px;
+            background: rgba(255, 255, 0, 0.2);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+        }
+        .item.bad-item {
+            border: 3px solid #FF0000;
+            background: rgba(255, 0, 0, 0.2);
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
+        }
+        .obstacle {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            font-size: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #FF0000;
+            border-radius: 8px;
+            background: rgba(255, 0, 0, 0.2);
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
+        }
+        .boost-effect {
+            position: absolute;
+            font-size: 28px;
+            font-weight: bold;
+            animation: floatUp 1.5s ease-out forwards;
+            pointer-events: none;
+            text-shadow: 0 0 10px rgba(0,0,0,0.8);
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            white-space: nowrap;
+            z-index: 50;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-80px) scale(1.5); opacity: 0; }
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+        .shield-mode {
+            animation: pulse 0.5s ease-in-out;
+            border: 3px solid #FFD700 !important;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 1) !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="menu">
+            <div class="menu-title">🐰 달리는 동물들 🐢</div>
+
+            <div class="select-group">
+                <label>캐릭터 선택:</label>
+                <div class="buttons">
+                    <button onclick="selectChar(0)">🐰</button>
+                    <button onclick="selectChar(1)">🐢</button>
+                    <button onclick="selectChar(2)">🦊</button>
+                    <button onclick="selectChar(3)">🦌</button>
+                </div>
+            </div>
+
+            <div class="select-group">
+                <label>스테이지 선택:</label>
+                <div class="buttons">
+                    <button onclick="selectStage(0)" style="width: auto; padding: 10px 15px;">🌾</button>
+                    <button onclick="selectStage(1)" style="width: auto; padding: 10px 15px;">⛰️</button>
+                    <button onclick="selectStage(2)" style="width: auto; padding: 10px 15px;">🏔️</button>
+                </div>
+            </div>
+
+            <button id="startBtn" onclick="startGame()">🏃 경주 시작!</button>
+        </div>
+
+        <div id="game">
+            <div id="score">점수: 0</div>
+            <div id="health">❤️ 3</div>
+            <div id="stage">Stage 1</div>
+            <div id="active-effects">⚡ 활성 효과 없음</div>
+            <div id="player">🐰</div>
+            <div id="items"></div>
+            <div id="obstacles"></div>
+        </div>
+    </div>
+
+    <script>
+        console.log("🎮 게임 시작!");
+
+        let selectedChar = null;
+        let selectedStage = null;
+
+        const chars = [
+            { emoji: '🐰', name: '토끼', speed: 5 },
+            { emoji: '🐢', name: '거북이', speed: 2 },
+            { emoji: '🦊', name: '여우', speed: 4.5 },
+            { emoji: '🦌', name: '사슴', speed: 4.8 }
+        ];
+
+        const stages = [
+            { name: '🌾 들판', bg: '#90EE90' },
+            { name: '⛰️ 산', bg: '#A9A9A9' },
+            { name: '🏔️ 계곡', bg: '#696969' }
+        ];
+
+        function selectChar(idx) {
+            console.log("캐릭터 선택:", chars[idx].name);
+            selectedChar = idx;
+
+            // UI 업데이트
+            document.querySelectorAll('.select-group')[0].querySelectorAll('button').forEach((btn, i) => {
+                if (i === idx) btn.classList.add('selected');
+                else btn.classList.remove('selected');
+            });
+        }
+
+        function selectStage(idx) {
+            console.log("스테이지 선택:", stages[idx].name);
+            selectedStage = idx;
+
+            // UI 업데이트
+            document.querySelectorAll('.select-group')[1].querySelectorAll('button').forEach((btn, i) => {
+                if (i === idx) btn.classList.add('selected');
+                else btn.classList.remove('selected');
+            });
+        }
+
+        function startGame() {
+            if (selectedChar === null) {
+                alert('캐릭터를 선택하세요!');
+                return;
+            }
+            if (selectedStage === null) {
+                alert('스테이지를 선택하세요!');
+                return;
+            }
+
+            console.log("🎮 게임 시작! 캐릭터:", selectedChar, "스테이지:", selectedStage);
+
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+            document.getElementById('gameContainer').style.background = stages[selectedStage].bg;
+
+            // 플레이어 설정
+            const player = document.getElementById('player');
+            player.textContent = chars[selectedChar].emoji;
+
+            // 게임 시작
+            runGame();
+        }
+
+        // ==================== 게임 로직 ====================
+
+        function runGame() {
+            const gameDiv = document.getElementById('gameContainer');
+            const playerDiv = document.getElementById('player');
+            const scoreDiv = document.getElementById('score');
+            const healthDiv = document.getElementById('health');
+            const stageDiv = document.getElementById('stage');
+            const itemsDiv = document.getElementById('items');
+            const obstaclesDiv = document.getElementById('obstacles');
+
+            // 스테이지 설정
+            const STAGES_CONFIG = [
+                { name: '🌾 Stage 1', nextScore: 2000, bgColor: '#90EE90', itemRate: 1.0, obsRate: 1.0 },
+                { name: '⛰️ Stage 2', nextScore: 5000, bgColor: '#A9A9A9', itemRate: 0.8, obsRate: 1.3 },
+                { name: '🏔️ Stage 3', nextScore: 10000, bgColor: '#696969', itemRate: 0.6, obsRate: 1.6 },
+                { name: '🌪️ Stage 4', nextScore: 0, bgColor: '#2F2F2F', itemRate: 0.5, obsRate: 2.0 }
+            ];
+
+            let score = 0;
+            let distance = 0;
+            let playerX = 180;
+            let playerY = 250;
+            let gameActive = true;
+            let spawnCount = 0;
+            let health = 3;  // 체력
+            let currentStage = 0;  // 현재 스테이지 (0 = Stage 1)
+
+            const charSpeed = chars[selectedChar].speed;
+            const gameWidth = 400;
+            const gameHeight = 600;
+
+            // 입력 처리
+            let leftPressed = false;
+            let rightPressed = false;
+            let upPressed = false;
+            let downPressed = false;
+            let keyboardActive = false;
+
+            // 키보드 입력 (우선)
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                    leftPressed = true;
+                    keyboardActive = true;
+                }
+                if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                    rightPressed = true;
+                    keyboardActive = true;
+                }
+                if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+                    upPressed = true;
+                    keyboardActive = true;
+                }
+                if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+                    downPressed = true;
+                    keyboardActive = true;
+                }
+            });
+
+            document.addEventListener('keyup', (e) => {
+                if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') leftPressed = false;
+                if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') rightPressed = false;
+                if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') upPressed = false;
+                if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') downPressed = false;
+            });
+
+            // 터치/마우스 입력 (키보드가 없으면만)
+            gameDiv.addEventListener('mousemove', (e) => {
+                const rect = gameDiv.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                // 키보드 입력이 없을 때만 마우스 입력 적용
+                if (!keyboardActive) {
+                    // 좌우 이동
+                    if (x < gameWidth / 3) {
+                        leftPressed = true;
+                        rightPressed = false;
+                    } else if (x > gameWidth * 2 / 3) {
+                        rightPressed = true;
+                        leftPressed = false;
+                    } else {
+                        leftPressed = false;
+                        rightPressed = false;
+                    }
+
+                    // 상하 이동
+                    if (y < gameHeight / 3) {
+                        upPressed = true;
+                        downPressed = false;
+                    } else if (y > gameHeight * 2 / 3) {
+                        downPressed = true;
+                        upPressed = false;
+                    } else {
+                        upPressed = false;
+                        downPressed = false;
+                    }
+                }
+            });
+
+            // 마우스가 나가면 입력 해제
+            gameDiv.addEventListener('mouseleave', () => {
+                if (!keyboardActive) {
+                    leftPressed = false;
+                    rightPressed = false;
+                    upPressed = false;
+                    downPressed = false;
+                }
+            });
+
+            // 게임 루프
+            let boostMultiplier = 1;  // 속도 부스트
+            let boostTime = 0;  // 부스트 지속시간
+
+            const gameLoop = setInterval(() => {
+                if (!gameActive) {
+                    clearInterval(gameLoop);
+                    return;
+                }
+
+                // 플레이어 이동 (좌우)
+                if (!frozenActive) {  // 얼음 상태이면 이동 불가
+                    if (leftPressed) playerX = Math.max(0, playerX - 8);
+                    if (rightPressed) playerX = Math.min(gameWidth - 40, playerX + 8);
+
+                    // 플레이어 이동 (상하)
+                    if (upPressed) playerY = Math.max(0, playerY - 6);
+                    if (downPressed) playerY = Math.min(gameHeight - 50, playerY + 6);
+                }
+
+                // 플레이어 위치 업데이트
+                playerDiv.style.left = playerX + 'px';
+                playerDiv.style.top = playerY + 'px';
+
+                // 거리 증가 (부스트 적용)
+                distance += charSpeed * boostMultiplier;
+
+                // 부스트 시간 감소
+                if (boostTime > 0) {
+                    boostTime--;
+                    if (boostMultiplier > 1) {
+                        playerDiv.style.transform = 'scale(1.1)';
+                        playerDiv.style.filter = 'brightness(1.5)';
+                    }
+                } else {
+                    boostMultiplier = 1;
+                    playerDiv.style.transform = 'scale(1)';
+                    if (!blurActive) playerDiv.style.filter = 'brightness(1)';
+                }
+
+                // 활성 효과 업데이트
+                Object.keys(activeEffects).forEach(key => {
+                    activeEffects[key].time--;
+                    if (activeEffects[key].time <= 0) {
+                        delete activeEffects[key];
+
+                        // 효과 해제
+                        if (key === '🛡️') shieldActive = false;
+                        if (key === '🌙') boostMultiplier = 1;  // 속도 정상화
+                        if (key === '💣') boostMultiplier = 1;  // 속도 정상화
+                        if (key === '🔒') frozenActive = false;  // 이동 가능
+                        if (key === '👻') {
+                            blurActive = false;
+                            playerDiv.style.opacity = '1';
+                        }
+                    }
+                });
+
+                // 활성 효과 UI 업데이트
+                updateActiveEffectsUI();
+
+                // 점수 계산
+                score = Math.floor(distance / 8);  // 점수 계산 조정
+                scoreDiv.textContent = '점수: ' + score;
+
+                // 스테이지 업그레이드 체크
+                const currentStageConfig = STAGES_CONFIG[currentStage];
+                if (currentStageConfig.nextScore > 0 && score >= currentStageConfig.nextScore) {
+                    upgradeStage();
+                }
+
+                // 아이템/장애물 스폰 (점진적 난이도 증가 + 스테이지 난이도)
+                spawnCount++;
+                const stageConfig = STAGES_CONFIG[currentStage];
+                const baseDifficulty = Math.min(2, 1 + distance / 8000);  // 시간이 지날수록 어려워짐
+                const stageDifficulty = baseDifficulty * (2 - stageConfig.itemRate);  // 스테이지별 난이도
+
+                // 아이템은 스테이지별로 다르게, 장애물도 스테이지별로 다르게
+                const itemSpawnRate = Math.max(40, Math.floor(60 * stageConfig.itemRate / stageDifficulty));
+                const obsSpawnRate = Math.max(20, Math.floor(45 * stageConfig.obsRate / stageDifficulty));
+
+                if (spawnCount % itemSpawnRate === 0) spawnItem();
+                if (spawnCount % obsSpawnRate === 0) spawnObstacle();
+
+                // 아이템 및 장애물 업데이트
+                updateItems();
+                updateObstacles();
+
+            }, 30);
+
+            // 아이템별 효과
+            let shieldActive = false;
+            let slowActive = false;
+            let frozenActive = false;
+            let blurActive = false;
+            const activeEffects = {};
+
+            function applyBoost(itemEmoji) {
+                let boostLevel = 1;
+                let effectText = '';
+                let effectColor = '#FFD700';
+                let duration = 150;
+                let healAmount = 0;
+                let isBadItem = false;
+
+                switch(itemEmoji) {
+                    // ===== 좋은 아이템 =====
+                    case '🥕':  // 당근
+                        boostLevel = 1.8;
+                        effectText = '🥕 당근부스트! +80% 속도 (5초)';
+                        effectColor = '#FF6347';
+                        healAmount = 1;
+                        duration = 150;
+                        break;
+                    case '🍎':  // 사과
+                        boostLevel = 1.5;
+                        effectText = '🍎 사과부스트! +50% 속도 (4초)';
+                        effectColor = '#FF69B4';
+                        healAmount = 1;
+                        duration = 120;
+                        break;
+                    case '🍄':  // 버섯
+                        boostLevel = 2.5;
+                        effectText = '🍄 버섯파워! +150% 속도 (3초) & +2❤️';
+                        effectColor = '#FFD700';
+                        healAmount = 2;
+                        duration = 90;
+                        break;
+                    case '⭐':  // 별
+                        boostLevel = 3;
+                        effectText = '⭐ 슈퍼부스트! +200% 속도 (6초) & +3❤️';
+                        effectColor = '#FFFF00';
+                        duration = 180;
+                        healAmount = 3;
+                        break;
+                    case '🛡️':  // 쉴드
+                        shieldActive = true;
+                        effectText = '🛡️ 무적 쉴드! (8초)';
+                        effectColor = '#C0C0C0';
+                        duration = 240;
+                        playerDiv.classList.add('shield-mode');
+                        activeEffects['🛡️'] = { emoji: '🛡️', time: duration, maxTime: duration, isBad: false };
+                        break;
+
+                    // ===== 나쁜 아이템 =====
+                    case '🌙':  // 달: 속도 감소
+                        boostLevel = 0.5;
+                        effectText = '🌙 어둠! -50% 속도 (4초)';
+                        effectColor = '#4444FF';
+                        duration = 120;
+                        isBadItem = true;
+                        activeEffects['🌙'] = { emoji: '🌙', time: duration, maxTime: duration, isBad: true };
+                        break;
+                    case '💣':  // 폭탄: 체력 감소
+                        effectText = '💣 폭발! -1❤️ & -50% 속도 (5초)';
+                        effectColor = '#FF0000';
+                        healAmount = -1;
+                        boostLevel = 0.5;
+                        duration = 150;
+                        isBadItem = true;
+                        activeEffects['💣'] = { emoji: '💣', time: duration, maxTime: duration, isBad: true };
+                        break;
+                    case '🔒':  // 잠금: 이동 제한
+                        frozenActive = true;
+                        effectText = '🔒 얼음! 이동 불가 (3초)';
+                        effectColor = '#00FFFF';
+                        duration = 90;
+                        isBadItem = true;
+                        activeEffects['🔒'] = { emoji: '🔒', time: duration, maxTime: duration, isBad: true };
+                        break;
+                    case '👻':  // 유령: 시야 흐림
+                        blurActive = true;
+                        effectText = '👻 혼란! 시야 흐림 (4초)';
+                        effectColor = '#AAAAFF';
+                        duration = 120;
+                        isBadItem = true;
+                        playerDiv.style.opacity = '0.5';
+                        activeEffects['👻'] = { emoji: '👻', time: duration, maxTime: duration, isBad: true };
+                        break;
+                }
+
+                // 체력 회복/감소
+                if (healAmount !== 0) {
+                    health = Math.max(1, Math.min(5, health + healAmount));
+                    updateHealthDisplay();
+                }
+
+                // 부스트 적용 (쉴드 제외)
+                if (itemEmoji !== '🛡️') {
+                    boostMultiplier = boostLevel;
+                    boostTime = duration;
+
+                    if (!isBadItem) {
+                        activeEffects[itemEmoji] = { emoji: itemEmoji, time: duration, maxTime: duration, isBad: false };
+                    }
+                }
+
+                playBoostEffect(effectText, effectColor);
+            }
+
+            function playBoostEffect(text, color) {
+                const effect = document.createElement('div');
+                effect.className = 'boost-effect';
+                effect.textContent = text;
+                effect.style.color = color;
+                effect.style.left = (playerX - 50) + 'px';
+                effect.style.top = (playerY - 60) + 'px';
+                gameDiv.appendChild(effect);
+
+                setTimeout(() => effect.remove(), 1500);
+            }
+
+            function spawnItem() {
+                // 좋은 아이템: 80% 확률, 나쁜 아이템: 20% 확률
+                let item;
+                let isBad = false;
+                if (Math.random() < 0.8) {
+                    // 좋은 아이템들
+                    const goodItems = ['🥕', '🍎', '🍄', '⭐', '🛡️'];
+                    item = goodItems[Math.floor(Math.random() * goodItems.length)];
+                } else {
+                    // 나쁜 아이템들
+                    const badItems = ['🌙', '💣', '🔒', '👻'];
+                    item = badItems[Math.floor(Math.random() * badItems.length)];
+                    isBad = true;
+                }
+
+                const x = Math.random() * (gameWidth - 50);
+                const y = -50;
+
+                const div = document.createElement('div');
+                div.className = 'item';
+                if (isBad) div.classList.add('bad-item');  // 나쁜 아이템은 빨간 테두리
+                div.textContent = item;
+                div.style.left = x + 'px';
+                div.style.top = y + 'px';
+                div.dataset.x = x;
+                div.dataset.y = y;
+                div.dataset.item = item;
+                itemsDiv.appendChild(div);
+            }
+
+            function spawnObstacle() {
+                const obstacles = ['🪨', '🌳'];
+                const obs = obstacles[Math.floor(Math.random() * obstacles.length)];
+
+                // 스테이지별 크기 조정
+                let obsWidth = 60;
+                let obsHeight = 60;
+                let speed = 1.5;
+
+                if (currentStage >= 1) {
+                    obsWidth = 65;
+                    obsHeight = 65;
+                    speed = 1.8;
+                }
+                if (currentStage >= 2) {
+                    obsWidth = 70;
+                    obsHeight = 70;
+                    speed = 2.0;
+                }
+                if (currentStage >= 3) {
+                    obsWidth = 75;
+                    obsHeight = 75;
+                    speed = 2.3;
+                }
+
+                const x = Math.random() * (gameWidth - obsWidth);
+                const y = -obsHeight;
+
+                const div = document.createElement('div');
+                div.className = 'obstacle';
+                div.textContent = obs;
+                div.style.left = x + 'px';
+                div.style.top = y + 'px';
+                div.style.width = obsWidth + 'px';
+                div.style.height = obsHeight + 'px';
+                div.style.fontSize = (obsWidth - 20) + 'px';
+                div.dataset.x = x;
+                div.dataset.y = y;
+                div.dataset.speed = speed;
+                div.dataset.width = obsWidth;
+                div.dataset.height = obsHeight;
+                obstaclesDiv.appendChild(div);
+            }
+
+            function updateItems() {
+                const items = itemsDiv.querySelectorAll('.item');
+                items.forEach((item) => {
+                    let y = parseFloat(item.dataset.y);
+                    y += 2;
+                    item.style.top = y + 'px';
+                    item.dataset.y = y;
+
+                    // 플레이어와 충돌 확인
+                    if (checkCollision(playerX, playerY, 40, 50, parseFloat(item.dataset.x), y, 50, 50)) {
+                        const itemEmoji = item.dataset.item;
+                        console.log("✅ 아이템 획득:", itemEmoji);
+
+                        let points = 100;
+                        let pointText = '+100점';
+
+                        // 아이템별 점수
+                        if (itemEmoji === '🛡️') {
+                            points = 500;
+                            pointText = '+500점 (무적!)';
+                        } else if (itemEmoji === '⭐') {
+                            points = 300;
+                            pointText = '+300점 (슈퍼!)';
+                        } else if (itemEmoji === '🍄') {
+                            points = 200;
+                            pointText = '+200점';
+                        } else if (itemEmoji === '🥕') {
+                            points = 150;
+                            pointText = '+150점';
+                        } else if (itemEmoji === '🍎') {
+                            points = 100;
+                            pointText = '+100점';
+                        }
+
+                        item.remove();
+                        score += points;
+                        applyBoost(itemEmoji);  // 아이템별 부스트 효과
+                        scoreDiv.textContent = '점수: ' + score;
+
+                        // 획득 애니메이션
+                        const floatText = document.createElement('div');
+                        floatText.textContent = itemEmoji + ' ' + pointText;
+                        floatText.style.position = 'absolute';
+                        floatText.style.left = playerX + 'px';
+                        floatText.style.top = (playerY - 30) + 'px';
+                        floatText.style.color = '#FFD700';
+                        floatText.style.fontSize = '20px';
+                        floatText.style.fontWeight = 'bold';
+                        floatText.style.animation = 'floatUp 1.5s ease-out forwards';
+                        floatText.style.textShadow = '0 0 8px rgba(0,0,0,0.8)';
+                        gameDiv.appendChild(floatText);
+                        setTimeout(() => floatText.remove(), 1500);
+                    }
+
+                    // 화면 밖으로 나가면 제거
+                    if (y > gameHeight) {
+                        item.remove();
+                    }
+                });
+            }
+
+            function updateObstacles() {
+                const obstacles = obstaclesDiv.querySelectorAll('.obstacle');
+                obstacles.forEach((obs) => {
+                    let y = parseFloat(obs.dataset.y);
+                    const speed = parseFloat(obs.dataset.speed) || 1.5;
+                    const width = parseInt(obs.dataset.width) || 60;
+                    const height = parseInt(obs.dataset.height) || 60;
+
+                    y += speed;
+                    obs.style.top = y + 'px';
+                    obs.dataset.y = y;
+
+                    // 플레이어와 충돌 확인
+                    if (checkCollision(playerX, playerY, 40, 50, parseFloat(obs.dataset.x), y, width, height)) {
+                        if (shieldActive) {
+                            // 쉴드가 있으면 장애물 무시
+                            console.log("🛡️ 쉴드가 장애물을 막음!");
+                            score += 50;
+                            shieldActive = false;
+                            playerDiv.classList.remove('shield-mode');
+                            playerDiv.style.filter = 'brightness(1)';
+
+                            const effect = document.createElement('div');
+                            effect.className = 'boost-effect';
+                            effect.textContent = '🛡️ 쉴드 방어!';
+                            effect.style.color = '#C0C0C0';
+                            effect.style.left = (playerX - 50) + 'px';
+                            effect.style.top = (playerY - 60) + 'px';
+                            gameDiv.appendChild(effect);
+                            setTimeout(() => effect.remove(), 1500);
+
+                            obs.remove();
+                        } else {
+                            // 체력 차감
+                            console.log("💥 장애물 충돌! 체력 -1");
+                            const gameOver = damagePlayer(1);
+
+                            obs.remove();
+
+                            if (gameOver) {
+                                console.log("💔 게임 오버! 점수:", score);
+                                gameActive = false;
+                                endGame(score);
+                            }
+                        }
+                    }
+
+                    // 화면 밖으로 나가면 제거
+                    if (y > gameHeight) {
+                        obs.remove();
+                    }
+                });
+            }
+
+            function checkCollision(x1, y1, w1, h1, x2, y2, w2, h2) {
+                return x1 < x2 + w2 && x1 + w1 > x2 && y1 < y2 + h2 && y1 + h1 > y2;
+            }
+
+            function updateHealthDisplay() {
+                let hearts = '';
+                for (let i = 0; i < health; i++) {
+                    hearts += '❤️';
+                }
+                healthDiv.innerHTML = `${hearts} ${health}`;
+
+                if (health <= 1) {
+                    healthDiv.style.color = '#FF0000';
+                }
+            }
+
+            function damagePlayer(amount = 1) {
+                health -= amount;
+                updateHealthDisplay();
+
+                // 피격 효과
+                playerDiv.style.filter = 'brightness(0.5)';
+                setTimeout(() => {
+                    playerDiv.style.filter = 'brightness(1)';
+                }, 200);
+
+                if (health <= 0) {
+                    return true;  // 게임 오버
+                }
+                return false;  // 계속
+            }
+
+            // 초기 체력 표시
+            updateHealthDisplay();
+
+            function updateStageDisplay() {
+                const stageConfig = STAGES_CONFIG[currentStage];
+                stageDiv.textContent = stageConfig.name;
+
+                if (currentStage < STAGES_CONFIG.length - 1) {
+                    stageDiv.textContent += ` (${STAGES_CONFIG[currentStage].nextScore}점)`;
+                } else {
+                    stageDiv.textContent += ' (무한도전!)';
+                }
+            }
+
+            function upgradeStage() {
+                if (currentStage < STAGES_CONFIG.length - 1) {
+                    currentStage++;
+                    const newStage = STAGES_CONFIG[currentStage];
+
+                    // 배경색 변경
+                    gameDiv.style.background = newStage.bgColor;
+
+                    // 스테이지 표시 업데이트
+                    updateStageDisplay();
+                    stageDiv.classList.add('stage-up');
+                    setTimeout(() => stageDiv.classList.remove('stage-up'), 1000);
+
+                    // 스테이지 업 메시지
+                    const msg = document.createElement('div');
+                    msg.style.cssText = `
+                        position: absolute;
+                        left: 50%;
+                        top: 50%;
+                        transform: translate(-50%, -50%);
+                        font-size: 48px;
+                        font-weight: bold;
+                        color: #FFD700;
+                        text-shadow: 0 0 20px rgba(0,0,0,0.9);
+                        z-index: 100;
+                        animation: floatUp 2s ease-out forwards;
+                        white-space: nowrap;
+                    `;
+                    msg.textContent = `🎉 ${newStage.name} 진입! 🎉`;
+                    gameDiv.appendChild(msg);
+                    setTimeout(() => msg.remove(), 2000);
+
+                    console.log("⬆️ 스테이지 업그레이드!", newStage.name);
+                }
+            }
+
+            updateStageDisplay();
+
+            function updateActiveEffectsUI() {
+                const effectsDiv = document.getElementById('active-effects');
+                const effectsList = Object.values(activeEffects);
+
+                if (effectsList.length === 0) {
+                    effectsDiv.innerHTML = '⚡ 활성 효과 없음';
+                    effectsDiv.className = '';
+                    return;
+                }
+
+                let html = '';
+                effectsList.forEach(effect => {
+                    const percent = Math.round((effect.time / effect.maxTime) * 100);
+                    const seconds = Math.ceil(effect.time / 33);  // 30ms * 33 ≈ 1초
+                    const badClass = effect.isBad ? 'bad-effect' : '';
+
+                    html += `
+                        <div style="margin-bottom: 8px;" class="${badClass}">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                                <span style="font-weight: bold;">${effect.emoji}</span>
+                                <span style="font-size: 12px;">${seconds}초</span>
+                            </div>
+                            <div class="effect-bar">
+                                <div class="effect-progress" style="width: ${percent}%;"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                effectsDiv.innerHTML = html;
+                effectsDiv.className = effectsList.some(e => e.isBad) ? 'bad-effect' : '';
+            }
+
+            function endGame(finalScore) {
+                document.getElementById('game').style.display = 'none';
+
+                const result = document.createElement('div');
+                result.style.cssText = `
+                    position: absolute;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.9);
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    gap: 20px;
+                    z-index: 200;
+                    color: white;
+                    font-size: 40px;
+                    font-weight: bold;
+                `;
+                result.innerHTML = `
+                    <div>🏁 경주 종료!</div>
+                    <div style="font-size: 48px; color: #FFD700;">점수: ${finalScore}</div>
+                    <button onclick="location.reload()" style="
+                        width: 200px;
+                        height: 60px;
+                        font-size: 24px;
+                        background: #00AA00;
+                        color: black;
+                        border: none;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-weight: bold;
+                    ">다시 하기</button>
+                `;
+                document.getElementById('gameContainer').appendChild(result);
+            }
+        }
+
+        console.log("✅ 게임 준비 완료!");
+    </script>
+</body>
+</html>
